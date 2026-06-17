@@ -8,10 +8,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
   --bg:#0a0908;
-  --text:#cfc6b8;
-  --faint:#5c5449;
-  --dim:#3a342e;
-  --accent:#9e8e7a;
+  --text:#f2ece4;
+  --faint:#c8b9a8;
+  --dim:#9a8d80;
+  --accent:#deccb8;
   --border:#1c1a17;
 }
 html{scroll-behavior:smooth;}
@@ -70,7 +70,7 @@ header{
 }
 .site-sub{
   font-size:9px;
-  color:#222019;
+  color:#6e6358;
   letter-spacing:0.2em;
   margin-top:0.25rem;
 }
@@ -105,7 +105,7 @@ section{
 .sec-label{
   font-size:8px;
   letter-spacing:0.5em;
-  color:#272420;
+  color:#6e6358;
   text-transform:uppercase;
   margin-bottom:4rem;
 }
@@ -138,7 +138,7 @@ section{
 .note-title:hover::before{color:var(--accent);}
 .note-body{
   font-size:12px;
-  color:#6b6059;
+  color:#b8aca0;
   max-height:0;
   overflow:hidden;
   transition:max-height 0.7s ease,padding 0.4s ease;
@@ -199,11 +199,11 @@ section{
   max-width:40ch;
 }
 a.margin-text:hover{color:var(--text);}
-.margin-note{font-size:10px;color:#2e2b26;letter-spacing:0.05em;}
+.margin-note{font-size:10px;color:#8a7e78;letter-spacing:0.05em;}
 
 footer{
   padding:3rem 5rem;
-  font-size:9px;color:#1e1c19;letter-spacing:0.2em;
+  font-size:9px;color:#6e6358;letter-spacing:0.2em;
 }
 
 /* Scrollbar */
@@ -321,12 +321,25 @@ const C = {
   resize(); tick();
 })();
 
+// ── CONTENT LOADER (with timeout so it never blocks) ─────────
+async function loadContent(){
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(()=>ctrl.abort(), 2000);
+    const res = await fetch('content.json',{signal:ctrl.signal});
+    clearTimeout(t);
+    if(res.ok) return await res.json();
+  } catch(e){}
+  return FALLBACK;
+}
+
 // ── ENTRY SEQUENCE ────────────────────────────────────────────
-window.addEventListener('load',()=>{
+window.addEventListener('load', ()=>{
   const line = document.getElementById('entry-line');
   const entry = document.getElementById('entry');
   const main = document.getElementById('main');
 
+  // Entry sequence runs immediately, independent of content loading
   setTimeout(()=>line.classList.add('lit'), 700);
   setTimeout(()=>{
     entry.classList.add('out');
@@ -335,11 +348,12 @@ window.addEventListener('load',()=>{
     setTimeout(observeAll, 400);
   }, 3200);
 
-  render();
+  // Content loads in parallel — uses fallback if fetch hangs or fails
+  loadContent().then(C=>render(C));
 });
 
 // ── RENDER CONTENT ────────────────────────────────────────────
-function render(){
+function render(C){
   const nw = document.getElementById('notes-wrap');
   C.notes.forEach(n=>{
     const d = document.createElement('div');
