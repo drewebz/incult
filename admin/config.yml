@@ -1,0 +1,37 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: images
+public_folder: /images
+
+collections:
+  - name: content
+    label: Content
+    files:
+      - name: site_content
+        label: Site Content
+        file: content.json
+        fields:
+          - label: Field Notes
+            name: notes
+            widget: list
+            fields:
+              - {label: Title, name: title, widget: string}
+              - {label: Body, name: body, widget: text}
+              - {label: Date, name: date, widget: string, default: "—"}
+          - label: Projects
+            name: projects
+            widget: list
+            fields:
+              - {label: Title, name: title, widget: string}
+              - {label: Description, name: desc, widget: text}
+              - {label: Status, name: status, widget: string}
+              - {label: URL, name: url, widget: string, required: false}
+          - label: Margins
+            name: margins
+            widget: list
+            fields:
+              - {label: Text, name: text, widget: string}
+              - {label: URL, name: url, widget: string, required: false}
+              - {label: Note, name: note, widget: string, required: false}
