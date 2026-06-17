@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>incult</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#0a0908;
+  --text:#cfc6b8;
+  --faint:#5c5449;
+  --dim:#3a342e;
+  --accent:#9e8e7a;
+  --border:#1c1a17;
+}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Courier New',Courier,monospace;
+  font-size:14px;
+  line-height:1.8;
+  min-height:100vh;
+  overflow-x:hidden;
+  cursor:crosshair;
+}
+
+/* Film grain canvas */
+#grain{
+  position:fixed;inset:0;
+  pointer-events:none;
+  z-index:999;
+  opacity:0.055;
+  mix-blend-mode:screen;
+}
+
+/* Entry veil */
+#entry{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:900;
+  transition:opacity 2s ease;
+}
+#entry.out{opacity:0;pointer-events:none;}
+#entry-line{
+  font-size:11px;
+  letter-spacing:0.18em;
+  color:#2e2b26;
+  transition:color 2.5s ease;
+}
+#entry-line.lit{color:var(--faint);}
+
+/* Layout */
+#main{opacity:0;transition:opacity 1.2s ease;}
+#main.in{opacity:1;}
+
+header{
+  padding:3.5rem 5rem 2.5rem;
+  border-bottom:1px solid var(--border);
+  position:relative;
+}
+.site-name{
+  font-size:10px;
+  letter-spacing:0.35em;
+  color:var(--dim);
+  font-weight:normal;
+  text-transform:lowercase;
+}
+.site-sub{
+  font-size:9px;
+  color:#222019;
+  letter-spacing:0.2em;
+  margin-top:0.25rem;
+}
+nav{
+  margin-top:2rem;
+  display:flex;
+  gap:3rem;
+}
+nav a{
+  font-size:10px;
+  letter-spacing:0.25em;
+  color:var(--dim);
+  text-decoration:none;
+  text-transform:lowercase;
+  position:relative;
+  transition:color 0.4s;
+}
+nav a::after{
+  content:'';
+  position:absolute;bottom:-2px;left:0;
+  width:0;height:1px;
+  background:var(--accent);
+  transition:width 0.5s ease;
+}
+nav a:hover{color:var(--accent);}
+nav a:hover::after{width:100%;}
+
+section{
+  padding:5rem;
+  border-bottom:1px solid var(--border);
+}
+.sec-label{
+  font-size:8px;
+  letter-spacing:0.5em;
+  color:#272420;
+  text-transform:uppercase;
+  margin-bottom:4rem;
+}
+
+/* Field notes */
+.note{
+  max-width:58ch;
+  margin-bottom:3.5rem;
+  opacity:0;
+  transform:translateY(10px);
+  transition:opacity 0.9s ease,transform 0.9s ease;
+}
+.note.in{opacity:1;transform:translateY(0);}
+.note-title{
+  font-size:13px;
+  color:var(--accent);
+  cursor:pointer;
+  user-select:none;
+  transition:color 0.25s;
+  display:flex;align-items:baseline;gap:0.75rem;
+}
+.note-title::before{
+  content:'—';
+  color:var(--dim);
+  font-size:10px;
+  flex-shrink:0;
+  transition:color 0.3s;
+}
+.note-title:hover{color:var(--text);}
+.note-title:hover::before{color:var(--accent);}
+.note-body{
+  font-size:12px;
+  color:#6b6059;
+  max-height:0;
+  overflow:hidden;
+  transition:max-height 0.7s ease,padding 0.4s ease;
+  padding-left:1.5rem;
+  border-left:1px solid var(--border);
+}
+.note-body.open{max-height:400px;padding-top:0.75rem;padding-bottom:0.25rem;}
+.note-date{
+  font-size:9px;color:#272420;margin-top:0.5rem;padding-left:1.5rem;
+}
+
+/* Projects */
+.projects-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:1.5rem;
+}
+.project{
+  border:1px solid var(--border);
+  padding:2rem;
+  opacity:0;
+  transform:translateY(10px);
+  transition:opacity 0.9s ease,transform 0.9s ease,border-color 0.3s;
+}
+.project.in{opacity:1;transform:translateY(0);}
+.project:hover{border-color:var(--dim);}
+.project h3{
+  font-size:12px;color:var(--accent);font-weight:normal;
+  letter-spacing:0.08em;margin-bottom:0.75rem;
+}
+.project p{font-size:11px;color:var(--faint);line-height:1.7;}
+.project-status{
+  font-size:8px;color:#272420;letter-spacing:0.3em;
+  text-transform:uppercase;margin-top:1.5rem;
+}
+.project a{
+  color:inherit;text-decoration:none;display:block;
+}
+
+/* Margins */
+.margins{display:flex;flex-direction:column;gap:2rem;}
+.margin-item{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:3rem;
+  align-items:baseline;
+  border-left:1px solid var(--border);
+  padding-left:1.5rem;
+  opacity:0;
+  transform:translateX(-6px);
+  transition:opacity 0.9s ease,transform 0.9s ease;
+}
+.margin-item.in{opacity:1;transform:translateX(0);}
+.margin-text{
+  font-size:12px;color:var(--faint);
+  text-decoration:none;
+  transition:color 0.25s;
+  max-width:40ch;
+}
+a.margin-text:hover{color:var(--text);}
+.margin-note{font-size:10px;color:#2e2b26;letter-spacing:0.05em;}
+
+footer{
+  padding:3rem 5rem;
+  font-size:9px;color:#1e1c19;letter-spacing:0.2em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:#1e1c19;}
+::selection{background:#2a2720;color:var(--text);}
+
+@media(max-width:680px){
+  header,section,footer{padding-left:2rem;padding-right:2rem;}
+  .margin-item{grid-template-columns:1fr;gap:0.5rem;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="grain"></canvas>
+
+<div id="entry">
+  <span id="entry-line">nothing here has been cultivated.</span>
+</div>
+
+<div id="main">
+  <header>
+    <h1 class="site-name">incult</h1>
+    <p class="site-sub">untilled &nbsp;·&nbsp; unfinished &nbsp;·&nbsp; uncooperative</p>
+    <nav>
+      <a href="#field-notes">field notes</a>
+      <a href="#projects">projects</a>
+      <a href="#margins">margins</a>
+    </nav>
+  </header>
+
+  <section id="field-notes">
+    <p class="sec-label">field notes</p>
+    <div id="notes-wrap"></div>
+  </section>
+
+  <section id="projects">
+    <p class="sec-label">projects</p>
+    <div class="projects-grid" id="projects-wrap"></div>
+  </section>
+
+  <section id="margins">
+    <p class="sec-label">margins</p>
+    <div class="margins" id="margins-wrap"></div>
+  </section>
+
+  <footer>incult.co.uk</footer>
+</div>
+
+<script>
+// ── CONTENT ──────────────────────────────────────────────────
+// In production this is loaded from /content.json via fetch()
+const C = {
+  notes: [
+    {
+      title: "on the usefulness of incompletion",
+      body: "Everything I have finished has been diminished by the finishing. The draft was more alive. There is a version of every project that exists just before you decide what it is — I would like to live there longer.",
+      date: "—"
+    },
+    {
+      title: "rough notes on cultivated things",
+      body: "Cultivation implies intent. Implies a desired yield. The untilled field has no yield — only what finds its way there by itself. Wind, birds, accident. I am more interested in the accident.",
+      date: "—"
+    },
+    {
+      title: "fragment [untitled]",
+      body: "Something I keep returning to: the gap between what you can describe and what you can make. The description is always ahead of the making. I don't know if this is a problem or a method.",
+      date: "—"
+    }
+  ],
+  projects: [
+    {
+      title: "Light Delay Correspondence",
+      desc: "A browser-based interactive experience built around the melancholy of confirmed but unreachable extraterrestrial contact. Four civilisations. One-way transmission. No reply possible.",
+      status: "complete",
+      url: "#"
+    },
+    {
+      title: "[untitled]",
+      desc: "Notes toward something. Not ready to be described yet. Possibly never will be.",
+      status: "forming",
+      url: null
+    }
+  ],
+  margins: [
+    { text: "The opposite of cultivation is not neglect", note: "— a thought without a home" },
+    { text: "Virilio on the aesthetics of disappearance", url: "#", note: "— still thinking about this" },
+    { text: "There is a Gaelic word for the quality of light just before rain", note: "— need to find it again" },
+    { text: "Ruins are more honest than the buildings that replaced them", note: "—" }
+  ]
+};
+
+// ── FILM GRAIN ────────────────────────────────────────────────
+(function(){
+  const canvas = document.getElementById('grain');
+  const ctx = canvas.getContext('2d');
+  let frame = 0;
+  function resize(){ canvas.width=window.innerWidth; canvas.height=window.innerHeight; }
+  function tick(){
+    frame++;
+    if(frame % 3 === 0){
+      const img = ctx.createImageData(canvas.width, canvas.height);
+      const d = img.data;
+      for(let i=0;i<d.length;i+=4){
+        const v = Math.random()*255|0;
+        d[i]=d[i+1]=d[i+2]=v; d[i+3]=255;
+      }
+      ctx.putImageData(img,0,0);
+    }
+    requestAnimationFrame(tick);
+  }
+  window.addEventListener('resize',resize);
+  resize(); tick();
+})();
+
+// ── ENTRY SEQUENCE ────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  const line = document.getElementById('entry-line');
+  const entry = document.getElementById('entry');
+  const main = document.getElementById('main');
+
+  setTimeout(()=>line.classList.add('lit'), 700);
+  setTimeout(()=>{
+    entry.classList.add('out');
+    main.classList.add('in');
+    setTimeout(()=>entry.remove(), 2500);
+    setTimeout(observeAll, 400);
+  }, 3200);
+
+  render();
+});
+
+// ── RENDER CONTENT ────────────────────────────────────────────
+function render(){
+  const nw = document.getElementById('notes-wrap');
+  C.notes.forEach(n=>{
+    const d = document.createElement('div');
+    d.className='note';
+    d.innerHTML=`
+      <div class="note-title" onclick="this.nextElementSibling.classList.toggle('open')">${n.title}</div>
+      <div class="note-body">${n.body}</div>
+      <div class="note-date">${n.date}</div>`;
+    nw.appendChild(d);
+  });
+
+  const pw = document.getElementById('projects-wrap');
+  C.projects.forEach(p=>{
+    const d = document.createElement('div');
+    d.className='project';
+    const inner = `<h3>${p.title}</h3><p>${p.desc}</p><div class="project-status">${p.status}</div>`;
+    d.innerHTML = p.url ? `<a href="${p.url}">${inner}</a>` : inner;
+    pw.appendChild(d);
+  });
+
+  const mw = document.getElementById('margins-wrap');
+  C.margins.forEach(m=>{
+    const d = document.createElement('div');
+    d.className='margin-item';
+    const txt = m.url
+      ? `<a class="margin-text" href="${m.url}">${m.text}</a>`
+      : `<span class="margin-text">${m.text}</span>`;
+    d.innerHTML=`${txt}<span class="margin-note">${m.note||''}</span>`;
+    mw.appendChild(d);
+  });
+}
+
+// ── SCROLL REVEAL ─────────────────────────────────────────────
+function observeAll(){
+  const io = new IntersectionObserver((entries)=>{
+    let delay = 0;
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        setTimeout(()=>e.target.classList.add('in'), delay);
+        delay += 80;
+        io.unobserve(e.target);
+      }
+    });
+  },{threshold:0.08});
+  document.querySelectorAll('.note,.project,.margin-item').forEach(el=>io.observe(el));
+}
+
+// ── UNCOOPERATIVE: resist selection briefly on every third attempt ──
+let selCount=0;
+document.addEventListener('selectstart',()=>{
+  selCount++;
+  if(selCount%4===0){
+    document.body.style.userSelect='none';
+    setTimeout(()=>document.body.style.userSelect='',180);
+  }
+});
+
+// ── UNCOOPERATIVE: nav links drift slightly before settling ────
+document.querySelectorAll('nav a').forEach(a=>{
+  a.addEventListener('mouseenter',()=>{
+    a.style.transform=`translateX(${(Math.random()-0.5)*4}px)`;
+    setTimeout(()=>a.style.transform='',300);
+  });
+});
+</script>
+</body>
+</html>
